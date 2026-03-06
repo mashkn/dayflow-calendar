@@ -4,6 +4,8 @@ import * as React from "react";
 import { Box, Typography, IconButton } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { getEventsForDay } from "@/lib/calendar/eventUtils";
+import type { Event } from "@/lib/db/types";
 
 const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -25,9 +27,13 @@ function getDaysInMonth(year: number, month: number) {
 type MonthCalendarProps = {
   year?: number;
   month?: number; // 0-indexed
+  events?: Event[];
+  onAddEvent?: (date: Date) => void;
+  onEventClick?: (event: Event) => void;
+  onViewChange?: (year: number, month: number) => void;
 };
 
-export function MonthCalendar({ year, month }: MonthCalendarProps) {
+export function MonthCalendar({ year, month, events = [], onAddEvent, onEventClick, onViewChange }: MonthCalendarProps) {
   const now = new Date();
   const [viewDate, setViewDate] = React.useState(() => ({
     year: year ?? now.getFullYear(),
@@ -49,19 +55,28 @@ export function MonthCalendar({ year, month }: MonthCalendarProps) {
     now.getDate() === d;
 
   const goPrev = () => {
-    setViewDate((prev) =>
-      prev.month === 0
+    setViewDate((prev) => {
+      const next = prev.month === 0
         ? { year: prev.year - 1, month: 11 }
-        : { year: prev.year, month: prev.month - 1 }
-    );
+        : { year: prev.year, month: prev.month - 1 };
+      onViewChange?.(next.year, next.month);
+      return next;
+    });
   };
   const goNext = () => {
-    setViewDate((prev) =>
-      prev.month === 11
+    setViewDate((prev) => {
+      const next = prev.month === 11
         ? { year: prev.year + 1, month: 0 }
-        : { year: prev.year, month: prev.month + 1 }
-    );
+        : { year: prev.year, month: prev.month + 1 };
+      onViewChange?.(next.year, next.month);
+      return next;
+    });
   };
+
+  React.useEffect(() => {
+    onViewChange?.(viewDate.year, viewDate.month);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: notify parent of initial view once on mount
+  }, []);
 
   return (
     <Box
@@ -141,52 +156,116 @@ export function MonthCalendar({ year, month }: MonthCalendarProps) {
           borderColor: "divider",
         }}
       >
-        {days.map((d, i) => (
+        {days.map((d, i) => {
+          const dayEvents = d !== null ? getEventsForDay(events, y, m, d) : [];
+          const dateForDay = d !== null ? new Date(y, m, d, 12, 0, 0, 0) : null;
+          return (
           <Box
             key={i}
             sx={{
               display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "center",
+              flexDirection: "column",
+              alignItems: "stretch",
+              justifyContent: "flex-start",
               pt: 0.5,
+              px: 0.25,
               borderRight: 1,
               borderBottom: 1,
               borderColor: "divider",
               bgcolor: d === null ? "action.hover" : "background.paper",
               ...(d !== null && {
                 "&:hover": { bgcolor: "action.hover" },
+                cursor: onAddEvent ? "pointer" : "default",
               }),
             }}
+            onClick={() =>
+              d !== null && dateForDay && onAddEvent ? onAddEvent(dateForDay) : undefined
+            }
           >
             {d !== null ? (
-              <Box
-                sx={{
-                  width: 28,
-                  height: 28,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "50%",
-                  ...(isToday(d)
-                    ? {
-                        bgcolor: "primary.main",
-                        color: "primary.contrastText",
-                        fontWeight: 700,
-                      }
-                    : {}),
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  component="span"
-                  fontWeight={isToday(d) ? 700 : 400}
+              <>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    alignSelf: "center",
+                  }}
                 >
-                  {d}
-                </Typography>
-              </Box>
+                  <Box
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: "50%",
+                      ...(isToday(d)
+                        ? {
+                            bgcolor: "primary.main",
+                            color: "primary.contrastText",
+                            fontWeight: 700,
+                          }
+                        : {}),
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      component="span"
+                      fontWeight={isToday(d) ? 700 : 400}
+                    >
+                      {d}
+                    </Typography>
+                  </Box>
+                </Box>
+                {dayEvents.length > 0 && (
+                  <Box
+                    sx={{
+                      flex: 1,
+                      minHeight: 0,
+                      overflow: "hidden",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 0.25,
+                      mt: 0.25,
+                    }}
+                  >
+                    {dayEvents.slice(0, 3).map((ev) => (
+                      <Box
+                        key={ev.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEventClick?.(ev);
+                        }}
+                        sx={{
+                          fontSize: "0.7rem",
+                          px: 0.5,
+                          py: 0.25,
+                          borderRadius: 0.5,
+                          bgcolor: ev.color ?? "primary.main",
+                          color: ev.color ? "text.primary" : "primary.contrastText",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          cursor: onEventClick ? "pointer" : "default",
+                          "&:hover": onEventClick ? { opacity: 0.9 } : {},
+                        }}
+                      >
+                        {ev.title}
+                      </Box>
+                    ))}
+                    {dayEvents.length > 3 && (
+                      <Typography variant="caption" color="text.secondary" sx={{ px: 0.5 }}>
+                        +{dayEvents.length - 3} more
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+              </>
             ) : null}
           </Box>
-        ))}
+          );
+        })}
       </Box>
     </Box>
   );

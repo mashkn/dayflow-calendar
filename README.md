@@ -48,6 +48,8 @@ Calendar and to-do for busy people. Web app first (Next.js), with future iOS and
    npm run db:generate
    ```
 
+   **Row Level Security (RLS):** If you use Supabase with the app, add RLS policies so signed-in users can read/write their data. For `calendars`: allow `select`, `insert`, `update`, `delete` where `owner_id = auth.uid()`. For `events`: allow the same where the event’s calendar is in `(select id from calendars where owner_id = auth.uid())`. You can create policies in the Supabase dashboard under **Authentication → Policies** (or Table Editor → select table → RLS).
+
 5. **Run**
 
    ```bash
