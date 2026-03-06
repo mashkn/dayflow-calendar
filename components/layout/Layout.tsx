@@ -89,11 +89,14 @@ export function Layout({ children, user }: LayoutProps) {
           width: "100%",
           maxWidth: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
           minWidth: 0,
-          minHeight: "100vh",
+          height: "calc(100vh - 64px)",
           mt: "64px",
           mr: { md: `${DRAWER_WIDTH}px` },
           p: { xs: 2, sm: 3 },
           boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
         }}
       >
         {children}

@@ -42,3 +42,6 @@ next-env.d.ts
 
 # prisma
 prisma/migrations
+
+# local roadmap (do not commit)
+v1-next.md

@@ -36,6 +36,7 @@ export function MonthCalendar({ year, month }: MonthCalendarProps) {
   const y = viewDate.year;
   const m = viewDate.month;
   const days = React.useMemo(() => getDaysInMonth(y, m), [y, m]);
+  const rowCount = days.length / 7;
   const monthLabel = new Date(y, m).toLocaleString("default", {
     month: "long",
     year: "numeric",
@@ -68,6 +69,10 @@ export function MonthCalendar({ year, month }: MonthCalendarProps) {
         width: "100%",
         maxWidth: "100%",
         minWidth: 0,
+        flex: 1,
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
         p: 3,
         border: 1,
         borderColor: "divider",
@@ -79,6 +84,7 @@ export function MonthCalendar({ year, month }: MonthCalendarProps) {
       {/* Month header with nav */}
       <Box
         sx={{
+          flexShrink: 0,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -102,6 +108,7 @@ export function MonthCalendar({ year, month }: MonthCalendarProps) {
       {/* Weekday row */}
       <Box
         sx={{
+          flexShrink: 0,
           display: "grid",
           gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
           textAlign: "center",
@@ -122,11 +129,14 @@ export function MonthCalendar({ year, month }: MonthCalendarProps) {
         ))}
       </Box>
 
-      {/* Day grid */}
+      {/* Day grid - fills remaining height with 5 or 6 equal rows */}
       <Box
         sx={{
+          flex: 1,
+          minHeight: 0,
           display: "grid",
           gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+          gridTemplateRows: `repeat(${rowCount}, minmax(0, 1fr))`,
           borderLeft: 1,
           borderColor: "divider",
         }}
@@ -135,7 +145,6 @@ export function MonthCalendar({ year, month }: MonthCalendarProps) {
           <Box
             key={i}
             sx={{
-              minHeight: 56,
               display: "flex",
               alignItems: "flex-start",
               justifyContent: "center",

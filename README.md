@@ -20,8 +20,8 @@ Calendar and to-do for busy people. Web app first (Next.js), with future iOS and
 2. **Supabase**
 
    - Create a project at [supabase.com](https://supabase.com).
-   - In Authentication → Providers, enable **Google** and add your OAuth client ID/secret.
-   - In Authentication → URL Configuration, set **Site URL** to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to **Redirect URLs**.
+   - Configure **Google Sign-In** (see [Google Sign-In setup](#google-sign-in-setup) below).
+   - In **Authentication → URL Configuration**, set **Site URL** to `http://localhost:3000` and add `http://localhost:3000/auth/callback` to **Redirect URLs**.
 
 3. **Environment**
 
@@ -55,6 +55,31 @@ Calendar and to-do for busy people. Web app first (Next.js), with future iOS and
    ```
 
    Open [http://localhost:3000](http://localhost:3000). Use **Sign in with Google** to log in.
+
+## Google Sign-In setup
+
+The app is already wired for Google OAuth (Supabase Auth + `/auth/callback`). You only need to create credentials and turn on the provider.
+
+1. **Google Cloud Console**
+   - Go to [console.cloud.google.com](https://console.cloud.google.com).
+   - Create or select a project.
+   - Open **APIs & Services → Credentials**.
+   - Click **Create credentials → OAuth client ID**.
+   - If asked, configure the **OAuth consent screen** (External, add your email, app name, save).
+   - Application type: **Web application**.
+   - Name: e.g. "Dayflow (local)".
+   - **Authorized redirect URIs:** add `https://<YOUR-PROJECT-REF>.supabase.co/auth/v1/callback`  
+     (get the exact URL from Supabase: **Authentication → Providers → Google**; it’s shown there).
+   - Create and copy the **Client ID** and **Client secret**.
+
+2. **Supabase**
+   - In your project: **Authentication → Providers**.
+   - Find **Google** and enable it.
+   - Paste **Client ID** and **Client secret** from step 1.
+   - Save.
+
+3. **Test**
+   - Run `npm run dev`, open the app, click **Sign in with Google**. You should be redirected to Google, then back to the app.
 
 ## Scripts
 
