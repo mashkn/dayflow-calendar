@@ -1,0 +1,135 @@
+// Dayflow Calendar - v1 schema
+// Postgres via Supabase in v1; same schema can back a custom API in v2.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id
+  email         String?   @unique
+  name          String?
+  avatarUrl     String?   @map("avatar_url")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  ownedCalendars   Calendar[]       @relation("CalendarOwner")
+  calendarShares   CalendarShare[]
+  todoSections     TodoSection[]
+  todos            Todo[]
+  globalLists      GlobalList[]
+
+  @@map("users")
+}
+
+model Calendar {
+  id        String   @id @default(cuid())
+  ownerId   String   @map("owner_id")
+  name      String
+  color     String   @default("#1976d2")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  owner User             @relation("CalendarOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  shares CalendarShare[]
+  events Event[]
+
+  @@map("calendars")
+}
+
+model CalendarShare {
+  id         String   @id @default(cuid())
+  calendarId String   @map("calendar_id")
+  userId     String   @map("user_id")
+  role       String   @default("view") // view | edit
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  calendar Calendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([calendarId, userId])
+  @@map("calendar_shares")
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  calendarId  String    @map("calendar_id")
+  title       String
+  start       DateTime
+  end         DateTime
+  allDay      Boolean   @default(false) @map("all_day")
+  description String?   @db.Text
+  color       String?   // override calendar color for this event
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  calendar Calendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+
+  @@map("events")
+}
+
+model TodoSection {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  name      String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  todos Todo[]
+
+  @@map("todo_sections")
+}
+
+model GlobalList {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  name      String   // e.g. "Work", "Social", "Shopping"
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items GlobalListItem[]
+
+  @@map("global_lists")
+}
+
+model GlobalListItem {
+  id           String    @id @default(cuid())
+  globalListId String    @map("global_list_id")
+  title        String
+  sortOrder    Int       @default(0) @map("sort_order")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  globalList GlobalList @relation(fields: [globalListId], references: [id], onDelete: Cascade)
+
+  @@map("global_list_items")
+}
+
+model Todo {
+  id                    String    @id @default(cuid())
+  userId                String    @map("user_id")
+  sectionId             String    @map("section_id")
+  title                 String
+  dueDate               DateTime  @map("due_date") // date (or datetime) this todo is for
+  done                  Boolean   @default(false)
+  doNotPersist          Boolean   @default(false) @map("do_not_persist")
+  sourceGlobalListId    String?   @map("source_global_list_id")
+  sourceGlobalListItemId String?  @map("source_global_list_item_id")
+  sortOrder             Int       @default(0) @map("sort_order")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  section TodoSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@map("todos")
+}
