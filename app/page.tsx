@@ -1,10 +1,5 @@
-import { MonthCalendar } from "@/components/calendar/MonthCalendar";
-import { Box } from "@mui/material";
+import { CalendarPage } from "@/components/calendar/CalendarPage";
 
 export default function HomePage() {
-  return (
-    <Box component="main" sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-      <MonthCalendar />
-    </Box>
-  );
+  return <CalendarPage />;
 }
